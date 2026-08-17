@@ -112,7 +112,6 @@
   .out:hover{border-color:var(--amber);color:var(--bone);}
 
   .dbody{display:grid;grid-template-columns:180px 1fr 260px;min-height:0;}
-  @media(max-width:860px){.dbody{grid-template-columns:1fr;}.nav,.rail{display:none;}}
   .nav{border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:2px;}
   .nav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:13.5px;color:var(--muted);cursor:pointer;letter-spacing:.01em;}
   .nav a.on{background:rgba(242,169,59,.1);color:var(--bone);}
@@ -138,6 +137,34 @@
   .rail{border-left:1px solid var(--line);padding:16px 14px;overflow:auto;}
   .rail h2{font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:var(--muted);margin-bottom:16px;}
   .empty{color:var(--muted);font-size:13px;line-height:1.5;border:1px dashed var(--line);border-radius:10px;padding:16px;text-align:center;}
+
+  /* ===================== RESPONSIVE (móvil) ===================== */
+  @media(max-width:860px){
+    /* barra superior compacta */
+    .topbar{gap:10px;padding:11px 14px;}
+    .bmini .nm{font-size:11px;}
+    .clock{display:none;}                 /* el reloj se oculta en móvil */
+    #camcount{font-size:11px;}
+
+    /* el cuerpo pasa a una sola columna: menú arriba, cámaras, y sin panel lateral fijo */
+    .dbody{display:flex;flex-direction:column;}
+    .nav{display:flex;flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);
+      padding:8px 10px;gap:6px;-webkit-overflow-scrolling:touch;}
+    .nav a{white-space:nowrap;padding:8px 12px;font-size:13px;}
+    .nav a .ic{display:none;}             /* solo texto en el menú móvil */
+
+    .main{padding:14px;}
+    .cams{grid-template-columns:1fr;}     /* cámaras a lo ancho, una debajo de otra */
+    .cam.add{min-height:120px;}
+
+    /* los eventos pasan a ir debajo de las cámaras, no en un lateral */
+    .rail{display:block;border-left:none;border-top:1px solid var(--line);}
+  }
+  @media(max-width:480px){
+    h1,.mtitle h1{font-size:15px;}
+    .form{width:100%;}
+    .topbar .bmini .nm{display:none;}     /* en pantallas muy pequeñas, solo el ojo */
+  }
 
   /* ===================== PERFIL (panel lateral) ===================== */
   .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,var(--amber),#c47f22);
