@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0E1014">
+<title>Panther</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='9' fill='%23F2A93B'/><rect x='14' y='9' width='4' height='14' rx='2' fill='%230E1014'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Saira:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1014; --ink-2:#14171d; --panel:#161A21;
+    --line:rgba(236,231,222,.10); --bone:#ECE7DE; --muted:#868B95;
+    --amber:#F2A93B; --glint:#FFC96B; --err:#E5533B;
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{background:var(--ink);color:var(--bone);
+    font-family:"Saira",system-ui,sans-serif;font-weight:300;overflow:hidden;
+    -webkit-font-smoothing:antialiased;user-select:none;}
+
+  .amb{position:fixed;inset:0;pointer-events:none;z-index:0;}
+  .amb .grid{position:absolute;inset:0;opacity:.5;
+    background-image:radial-gradient(rgba(236,231,222,.06) 1px,transparent 1px);background-size:26px 26px;
+    -webkit-mask-image:radial-gradient(120% 90% at 50% 50%,#000,transparent 75%);
+    mask-image:radial-gradient(120% 90% at 50% 50%,#000,transparent 75%);}
+  .amb .glow{position:absolute;top:-30%;left:50%;transform:translateX(-50%);width:120%;height:80%;
+    background:radial-gradient(closest-side,rgba(242,169,59,.10),transparent);}
+
+  .screen{position:fixed;inset:0;z-index:1;display:none;align-items:center;justify-content:center;
+    flex-direction:column;text-align:center;padding:24px;}
+  .screen.active{display:flex;}
+  .screen.fade{animation:scr .5s var(--ease);}
+  @keyframes scr{from{opacity:0}to{opacity:1}}
+
+  .eye{width:56px;height:auto;}
+  .wm{display:flex;align-items:flex-end;justify-content:center;white-space:nowrap;}
+  .wm .ltr{font-family:"Michroma",sans-serif;line-height:1;}
+  .wm .dot{background:var(--bone);flex:0 0 auto;}
+
+  /* LOGIN */
+  #login .brand{display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:34px;}
+  #login .wm .ltr{font-size:20px;}
+  #login .wm .dot{width:4px;height:4px;margin:0 8px 3px;}
+  .trackeye{width:60px;transform-origin:center;animation:eyeblink 4.6s infinite;}
+  @keyframes eyeblink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+  .pupilgrp{transition:transform .12s ease-out;}
+  .form{width:min(340px,86vw);}
+  .field{position:relative;margin-bottom:14px;}
+  .field label{position:absolute;left:16px;top:13px;font-size:14px;color:var(--muted);
+    pointer-events:none;transition:.2s var(--ease);}
+  .field input{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    color:var(--bone);font-family:"Saira";font-size:15px;font-weight:400;padding:22px 16px 8px;outline:none;
+    transition:border-color .2s;}
+  .field input:focus{border-color:var(--amber);}
+  .field input:focus+label,.field input.filled+label{top:7px;font-size:10.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--amber);}
+  .enter{width:100%;margin-top:8px;background:var(--amber);color:#1a1200;border:none;border-radius:11px;
+    font-family:"Saira";font-weight:600;font-size:15px;padding:14px;cursor:pointer;letter-spacing:.02em;
+    transition:background .2s,transform .1s,opacity .2s;}
+  .enter:hover{background:var(--glint);}
+  .enter:active{transform:scale(.99);}
+  .enter[disabled]{opacity:.55;cursor:default;}
+  .err{font-size:13px;margin-top:14px;min-height:18px;opacity:0;transition:opacity .2s;color:var(--err);}
+  .err.show{opacity:1;}
+  .err.info{color:var(--muted);}
+  .shake{animation:shake .4s;}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+
+  /* INTRO */
+  #intro .eye{width:60px;margin-bottom:20px;transform-origin:center;}
+  #intro.active .eye{animation:blink .34s ease 1.0s;}
+  @keyframes blink{0%,100%{transform:scaleY(1)}45%{transform:scaleY(.08)}}
+  #intro.active .iris{animation:glow 3s ease-in-out infinite 1.4s;}
+  @keyframes glow{50%{fill:var(--glint)}}
+  #intro .wm{margin-bottom:22px;}
+  #intro .wm .ltr{font-size:clamp(22px,5vw,34px);opacity:0;transform:translateY(12px);}
+  #intro .wm .dot{width:5px;height:5px;margin:0 9px 3px;opacity:0;}
+  #intro.active .wm .ltr{animation:letterIn .5s var(--ease) forwards;}
+  #intro.active .wm .dot{animation:fade .4s ease forwards;}
+  @keyframes letterIn{to{opacity:1;transform:none}}
+  @keyframes fade{to{opacity:1}}
+  #intro .wm .ltr:nth-child(1){animation-delay:.2s}#intro .wm .dot:nth-child(2){animation-delay:.32s}
+  #intro .wm .ltr:nth-child(3){animation-delay:.34s}#intro .wm .dot:nth-child(4){animation-delay:.44s}
+  #intro .wm .ltr:nth-child(5){animation-delay:.46s}#intro .wm .dot:nth-child(6){animation-delay:.56s}
+  #intro .wm .ltr:nth-child(7){animation-delay:.58s}#intro .wm .dot:nth-child(8){animation-delay:.68s}
+  #intro .wm .ltr:nth-child(9){animation-delay:.7s}#intro .wm .dot:nth-child(10){animation-delay:.8s}
+  #intro .wm .ltr:nth-child(11){animation-delay:.82s}#intro .wm .dot:nth-child(12){animation-delay:.92s}
+  #intro .wm .ltr:nth-child(13){animation-delay:.94s}
+  #intro .scan{width:0;height:2px;background:linear-gradient(90deg,transparent,var(--amber),transparent);
+    box-shadow:0 0 16px rgba(242,169,59,.5);}
+  #intro.active .scan{animation:scan .6s var(--ease) forwards 1.15s;}
+  @keyframes scan{to{width:min(64vw,320px)}}
+
+  /* WELCOME */
+  #welcome .hola{font-family:"Saira";font-weight:200;font-size:clamp(30px,7vw,54px);
+    letter-spacing:-.01em;color:var(--bone);opacity:0;transform:translateY(18px);}
+  #welcome .name{font-family:"Michroma",sans-serif;font-size:clamp(18px,4vw,30px);
+    margin-top:18px;color:var(--amber);opacity:0;transform:translateY(18px);word-break:break-word;}
+  #welcome.active .hola{animation:rise 1s var(--ease) forwards .15s;}
+  #welcome.active .name{animation:rise 1s var(--ease) forwards .5s;}
+  @keyframes rise{to{opacity:1;transform:none}}
+  #welcome .logout{margin-top:48px;font-size:12px;color:var(--muted);letter-spacing:.14em;
+    text-transform:uppercase;cursor:pointer;opacity:0;transition:color .2s;
+    animation:appear .8s ease forwards 1.6s;}
+  @keyframes appear{to{opacity:1}}
+  #welcome .logout:hover{color:var(--bone);}
+</style>
+</head>
+<body>
+
+<div class="amb"><div class="grid"></div><div class="glow"></div></div>
+
+<svg width="0" height="0" style="position:absolute"><symbol id="eye" viewBox="0 0 120 74">
+  <path d="M6 37 C40 8, 80 8, 114 37 C80 66, 40 66, 6 37 Z" fill="none" stroke="#F2A93B" stroke-width="3"/>
+  <circle class="iris" cx="60" cy="37" r="17" fill="#F2A93B"/>
+  <ellipse cx="60" cy="37" rx="4.4" ry="13" fill="#0E1014"/>
+  <circle cx="57" cy="30" r="2.2" fill="#FFF3DA"/>
+</symbol></svg>
+
+<!-- LOGIN -->
+<div class="screen active" id="login">
+  <div class="brand">
+    <svg class="trackeye" id="trackeye" viewBox="0 0 120 74">
+      <path d="M6 37 C40 8, 80 8, 114 37 C80 66, 40 66, 6 37 Z" fill="none" stroke="#F2A93B" stroke-width="3"/>
+      <g class="pupilgrp" id="pupilgrp">
+        <circle cx="60" cy="37" r="17" fill="#F2A93B"/>
+        <ellipse cx="60" cy="37" rx="4.4" ry="13" fill="#0E1014"/>
+        <circle cx="57" cy="30" r="2.2" fill="#FFF3DA"/>
+      </g>
+    </svg>
+    <div class="wm">
+      <span class="ltr">P</span><span class="dot"></span><span class="ltr">A</span><span class="dot"></span>
+      <span class="ltr">N</span><span class="dot"></span><span class="ltr">T</span><span class="dot"></span>
+      <span class="ltr">H</span><span class="dot"></span><span class="ltr">E</span><span class="dot"></span>
+      <span class="ltr">R</span>
+    </div>
+  </div>
+  <div class="form" id="form">
+    <div class="field">
+      <input id="email" type="email" autocomplete="username">
+      <label for="email">Email</label>
+    </div>
+    <div class="field">
+      <input id="pass" type="password" autocomplete="current-password">
+      <label for="pass">Contraseña</label>
+    </div>
+    <button class="enter" id="enterBtn" type="button">Entrar</button>
+    <div class="err" id="err"></div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen" id="intro">
+  <svg class="eye"><use href="#eye"/></svg>
+  <div class="wm">
+    <span class="ltr">P</span><span class="dot"></span><span class="ltr">A</span><span class="dot"></span>
+    <span class="ltr">N</span><span class="dot"></span><span class="ltr">T</span><span class="dot"></span>
+    <span class="ltr">H</span><span class="dot"></span><span class="ltr">E</span><span class="dot"></span>
+    <span class="ltr">R</span>
+  </div>
+  <div class="scan"></div>
+</div>
+
+<!-- WELCOME -->
+<div class="screen" id="welcome">
+  <div class="hola">Bienvenido,</div>
+  <div class="name" id="wname">usuario</div>
+  <div class="logout" id="logout">Cerrar sesión</div>
+</div>
+
+<!-- Supabase (cliente) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<!-- Tus claves -->
+<script src="config.js"></script>
+
+<script>
+(function(){
+  // normaliza la URL: quita "/rest/v1/" y barras finales por si se pega mal
+  var RAW = window.SUPABASE_URL || "";
+  var SUPA_URL = RAW.replace(/\/rest\/v1\/?$/i,"").replace(/\/+$/,"");
+  var KEY = window.SUPABASE_ANON_KEY || "";
+  var configured = SUPA_URL && KEY && SUPA_URL.indexOf("TU-")===-1 && KEY.indexOf("TU-")===-1;
+  var client = null;
+  try{
+    if(configured && window.supabase){ client = window.supabase.createClient(SUPA_URL, KEY); }
+  }catch(e){ client = null; }
+
+  var loginEl=document.getElementById('login'),
+      introEl=document.getElementById('intro'),
+      welEl=document.getElementById('welcome'),
+      formEl=document.getElementById('form'),
+      enterBtn=document.getElementById('enterBtn'),
+      emailI=document.getElementById('email'),
+      passI=document.getElementById('pass'),
+      err=document.getElementById('err'),
+      wname=document.getElementById('wname'),
+      logout=document.getElementById('logout'),
+      eyeSvg=document.getElementById('trackeye'),
+      pupil=document.getElementById('pupilgrp');
+
+  [emailI,passI].forEach(function(i){
+    i.addEventListener('input',function(){i.classList.toggle('filled',i.value.length>0);});
+    i.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); verify(); }});
+  });
+  enterBtn.addEventListener('click',verify);
+
+  function showError(msg,info){
+    err.textContent=msg;
+    err.classList.toggle('info',!!info);
+    err.classList.add('show');
+    if(!info){ formEl.classList.remove('shake'); void formEl.offsetWidth; formEl.classList.add('shake'); }
+  }
+  function setLoading(on){ enterBtn.disabled=on; enterBtn.textContent=on?'Verificando…':'Entrar'; }
+  function show(el){
+    [loginEl,introEl,welEl].forEach(function(s){s.classList.remove('active','fade');});
+    void el.offsetWidth; el.classList.add('active','fade');
+  }
+  function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+
+  function verify(){
+    if(!client){ showError('Configura tus claves de Supabase en config.js', true); return; }
+    var email=emailI.value.trim(), pass=passI.value;
+    if(!email || !pass){ showError('Rellena el email y la contraseña'); return; }
+    setLoading(true);
+    client.auth.signInWithPassword({ email: email, password: pass })
+      .then(function(res){
+        setLoading(false);
+        if(res.error){
+          var m=res.error.message||'';
+          if(/not confirmed/i.test(m)) showError('Ese usuario existe pero no está confirmado en Supabase');
+          else if(/invalid login/i.test(m)) showError('Email o contraseña incorrectos');
+          else showError(m || 'No se pudo iniciar sesión');
+          passI.value=''; passI.classList.remove('filled'); return;
+        }
+        var user=res.data.user, meta=user.user_metadata||{};
+        var name=meta.display_name || meta.name || (user.email ? user.email.split('@')[0] : 'usuario');
+        err.classList.remove('show');
+        show(introEl);                                   // intro Panther ~2s
+        setTimeout(function(){ wname.textContent=cap(name); show(welEl); },2000);
+      })
+      .catch(function(){ setLoading(false); showError('No se pudo conectar. Revisa tu conexión.'); });
+  }
+
+  logout.addEventListener('click',function(){
+    if(client){ try{ client.auth.signOut(); }catch(e){} }
+    emailI.value=''; passI.value='';
+    emailI.classList.remove('filled'); passI.classList.remove('filled');
+    err.classList.remove('show');
+    show(loginEl);
+    setTimeout(function(){emailI.focus();},220);
+  });
+
+  // ojo que sigue al cursor (solo en el login, solo con ratón)
+  document.addEventListener('mousemove',function(e){
+    if(!loginEl.classList.contains('active')) return;
+    var r=eyeSvg.getBoundingClientRect(); if(!r.width) return;
+    var cx=r.left+r.width/2, cy=r.top+r.height/2;
+    var dx=e.clientX-cx, dy=e.clientY-cy, ang=Math.atan2(dy,dx);
+    var mag=Math.min(1,Math.hypot(dx,dy)/260);
+    pupil.setAttribute('transform','translate('+(Math.cos(ang)*12*mag).toFixed(1)+','+(Math.sin(ang)*7*mag).toFixed(1)+')');
+  });
+
+  if(!configured){ showError('Añade tus claves de Supabase en config.js para activar el acceso', true); }
+  emailI.focus();
+})();
+</script>
+</body>
+</html>
