@@ -8,7 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='9' fill='%23F2A93B'/><rect x='14' y='9' width='4' height='14' rx='2' fill='%230E1014'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Saira:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Saira:wght@200;300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
   :root{
     --ink:#0E1014; --ink-2:#14171d; --panel:#161A21;
@@ -98,7 +98,7 @@
 
   /* ===================== DASHBOARD ===================== */
   #dashboard{padding:0;}
-  #dashboard.active{display:grid;grid-template-rows:auto 1fr;align-items:stretch;justify-content:stretch;text-align:left;}
+  #dashboard.active{display:grid;grid-template-rows:auto auto 1fr;align-items:stretch;justify-content:stretch;text-align:left;}
   .topbar{display:flex;align-items:center;gap:14px;padding:12px clamp(12px,3vw,22px);border-bottom:1px solid var(--line);background:var(--ink-2);}
   .bmini{display:flex;align-items:center;gap:9px;}
   .bmini .nm{font-family:"Michroma";font-size:12px;letter-spacing:.04em;}
@@ -137,6 +137,49 @@
   .rail{border-left:1px solid var(--line);padding:16px 14px;overflow:auto;}
   .rail h2{font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:var(--muted);margin-bottom:16px;}
   .empty{color:var(--muted);font-size:13px;line-height:1.5;border:1px dashed var(--line);border-radius:10px;padding:16px;text-align:center;}
+
+  /* ===================== ESTÉTICA TÁCTICA ===================== */
+  .clock,#camcount{font-family:"Share Tech Mono",ui-monospace,monospace;}
+
+  /* rejilla de centro de mando en el área principal */
+  .main{position:relative;}
+  .main::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.7;
+    background-image:linear-gradient(rgba(236,231,222,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(236,231,222,.03) 1px,transparent 1px);
+    background-size:34px 34px;-webkit-mask-image:radial-gradient(130% 100% at 50% 0%,#000,transparent 82%);
+    mask-image:radial-gradient(130% 100% at 50% 0%,#000,transparent 82%);}
+  .main>*{position:relative;z-index:1;}
+
+  /* barra de estado del sistema */
+  .sysbar{display:flex;align-items:stretch;background:#0b0d11;border-bottom:1px solid var(--line);
+    font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:.06em;color:var(--muted);overflow-x:auto;}
+  .sysbar .cell{display:flex;align-items:center;gap:7px;padding:7px 15px;border-right:1px solid var(--line);white-space:nowrap;}
+  .sysbar .k{color:#565a63;text-transform:uppercase;}
+  .sysbar .v{color:var(--bone);}
+  .sysbar .v.amber{color:var(--amber);}
+  .sysbar .dotok{width:7px;height:7px;background:var(--ok);border-radius:1px;box-shadow:0 0 8px var(--ok);animation:pulse 2.4s infinite;}
+
+  /* bordes más angulares (técnico) */
+  .cam,.card,.mc,.pf-plan,.pf-input,.enter,.field input{border-radius:4px;}
+  .feed{border-radius:0;}
+  .nav a{text-transform:uppercase;letter-spacing:.06em;font-size:12.5px;border-radius:4px;}
+
+  /* HUD sobre el vídeo */
+  .feed .hud{position:absolute;inset:0;pointer-events:none;z-index:3;}
+  .feed .br{position:absolute;width:20px;height:20px;border:2px solid var(--amber);opacity:.85;}
+  .feed .br.tl{top:8px;left:8px;border-right:0;border-bottom:0;}
+  .feed .br.tr{top:8px;right:8px;border-left:0;border-bottom:0;}
+  .feed .br.bl{bottom:8px;left:8px;border-right:0;border-top:0;}
+  .feed .br.brr{bottom:8px;right:8px;border-left:0;border-top:0;}
+  .feed .reticle{position:absolute;top:50%;left:50%;width:32px;height:32px;transform:translate(-50%,-50%);opacity:.3;}
+  .feed .reticle::before,.feed .reticle::after{content:"";position:absolute;background:var(--amber);}
+  .feed .reticle::before{left:50%;top:0;width:1px;height:100%;transform:translateX(-.5px);}
+  .feed .reticle::after{top:50%;left:0;height:1px;width:100%;transform:translateY(-.5px);}
+  .feed .ts{position:absolute;top:9px;right:10px;font-family:"Share Tech Mono",monospace;font-size:10px;
+    letter-spacing:.05em;color:#e0dacb;z-index:4;text-shadow:0 1px 2px #000;}
+  .feed .rec{font-family:"Share Tech Mono",monospace;}
+  .feed .cname{font-family:"Share Tech Mono",monospace;letter-spacing:.06em;text-shadow:0 1px 2px #000;}
+  .rail h2{font-family:"Share Tech Mono",monospace;}
+  .mtitle h1{letter-spacing:.02em;}
 
   /* ===================== RESPONSIVE (móvil) ===================== */
   @media(max-width:860px){
@@ -279,6 +322,13 @@
     <div class="clock" id="clock">00:00:00</div>
     <button class="avatar" id="profileBtn" title="Perfil">U</button>
   </div>
+  <div class="sysbar">
+    <div class="cell"><span class="dotok"></span><span class="k">Sistema</span><span class="v amber">OPERATIVO</span></div>
+    <div class="cell"><span class="k">Cámaras</span><span class="v" id="sb-cams">01 / 01</span></div>
+    <div class="cell"><span class="k">Enlace</span><span class="v">ACTIVO</span></div>
+    <div class="cell"><span class="k">Sesión</span><span class="v" id="sb-uptime">00:00:00</span></div>
+    <div class="cell"><span class="k">Hora</span><span class="v" id="sb-clock">00:00:00</span></div>
+  </div>
   <div class="dbody">
     <nav class="nav">
       <a class="on"><span class="ic"></span>Cámaras</a>
@@ -287,20 +337,21 @@
       <a><span class="ic"></span>Ajustes</a>
     </nav>
     <main class="main">
-      <div class="mtitle"><h1>Vista general</h1><span id="msub">en directo</span></div>
+      <div class="mtitle"><h1>Vigilancia activa</h1><span id="msub">Sector A · en directo</span></div>
       <div class="cams">
         <div class="cam">
           <div class="feed" id="camfeed">
-            <div class="rec"><i></i>EN&nbsp;VIVO</div>
+            <div class="rec"><i></i>● REC</div>
+            <div class="ts" id="feedts">--:--:--</div>
             <div id="camhost" style="width:100%;height:100%"></div>
-            <div class="cname" id="camname">Cámara 1</div>
+            <div class="cname" id="camname">CAM-01 · SECTOR A</div>
           </div>
         </div>
         <div class="cam add">+ Añadir cámara</div>
       </div>
     </main>
     <aside class="rail">
-      <h2>Eventos en directo</h2>
+      <h2>Registro de eventos</h2>
       <div class="empty">Aún no hay detecciones.<br>Cuando activemos la IA, aquí aparecerán los avisos (movimiento, zonas, objetos).</div>
     </aside>
   </div>
@@ -396,7 +447,8 @@
     }).catch(function(){ setLoading(false); showError('No se pudo conectar. Revisa tu conexión.'); });
   }
 
-  function enterDashboard(){ show(dashEl); mountCamera(); startClock(); }
+  function enterDashboard(){ loginTime=Date.now(); show(dashEl); mountCamera(); startClock(); }
+  var loginTime=null;
 
   logout.addEventListener('click',function(){
     if(client){ try{ client.auth.signOut(); }catch(e){} }
@@ -486,10 +538,17 @@
     }
   }
 
-  // ---- reloj ----
+  // ---- reloj + telemetría ----
   function startClock(){
-    var el=id('clock');
-    function t(){ var d=new Date(); el.textContent=[d.getHours(),d.getMinutes(),d.getSeconds()].map(function(n){return String(n).padStart(2,'0');}).join(':'); }
+    function pad(n){return String(n).padStart(2,'0');}
+    function setTxt(idn,v){var e=document.getElementById(idn); if(e)e.textContent=v;}
+    function t(){
+      var d=new Date();
+      var hhmmss=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+      setTxt('clock',hhmmss); setTxt('sb-clock',hhmmss); setTxt('feedts',hhmmss);
+      if(loginTime){ var s=Math.floor((Date.now()-loginTime)/1000);
+        setTxt('sb-uptime',pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60)); }
+    }
     t(); if(!startClock._i){ startClock._i=setInterval(t,1000); }
   }
 
