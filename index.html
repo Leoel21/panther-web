@@ -181,6 +181,19 @@
   .rail h2{font-family:"Share Tech Mono",monospace;}
   .mtitle h1{letter-spacing:.02em;}
 
+  /* detección de movimiento */
+  .feed .motion{position:absolute;bottom:8px;right:10px;z-index:4;font-family:"Share Tech Mono",monospace;
+    font-size:10px;letter-spacing:.06em;padding:3px 8px;border-radius:3px;background:rgba(0,0,0,.55);
+    color:var(--ok);border:1px solid rgba(95,176,138,.4);text-shadow:0 1px 2px #000;transition:.18s;}
+  .feed.alert .motion{color:var(--amber);border-color:var(--amber);background:rgba(242,169,59,.18);}
+  .feed.alert{box-shadow:inset 0 0 0 2px var(--amber);}
+  .ev{display:flex;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);animation:evin .3s ease;}
+  @keyframes evin{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
+  .ev .edot{width:8px;height:8px;border-radius:50%;background:var(--amber);margin-top:5px;flex:0 0 auto;box-shadow:0 0 8px rgba(242,169,59,.6);}
+  .ev .etx{font-size:12.5px;line-height:1.35;}
+  .ev .etx b{font-weight:500;color:var(--bone);}
+  .ev .etx small{display:block;color:var(--muted);font-size:11px;margin-top:2px;font-family:"Share Tech Mono",monospace;}
+
   /* ===================== RESPONSIVE (móvil) ===================== */
   @media(max-width:860px){
     /* barra superior compacta */
@@ -344,6 +357,7 @@
             <div class="rec"><i></i>● REC</div>
             <div class="ts" id="feedts">--:--:--</div>
             <div id="camhost" style="width:100%;height:100%"></div>
+            <div class="motion" id="motion">● SIN MOVIMIENTO</div>
             <div class="cname" id="camname">CAM-01 · SECTOR A</div>
           </div>
         </div>
@@ -352,7 +366,7 @@
     </main>
     <aside class="rail">
       <h2>Registro de eventos</h2>
-      <div class="empty">Aún no hay detecciones.<br>Cuando activemos la IA, aquí aparecerán los avisos (movimiento, zonas, objetos).</div>
+      <div id="evlist"><div class="empty" id="evempty">Sin detecciones todavía.<br>El sistema está vigilando el movimiento en directo.</div></div>
     </aside>
   </div>
 </div>
@@ -447,11 +461,13 @@
     }).catch(function(){ setLoading(false); showError('No se pudo conectar. Revisa tu conexión.'); });
   }
 
-  function enterDashboard(){ loginTime=Date.now(); show(dashEl); mountCamera(); startClock(); }
+  function enterDashboard(){ loginTime=Date.now(); show(dashEl); mountCamera(); startClock(); startDetection(); }
   var loginTime=null;
 
   logout.addEventListener('click',function(){
     if(client){ try{ client.auth.signOut(); }catch(e){} }
+    if(startDetection._i){ clearInterval(startDetection._i); startDetection._i=null; }
+    if(startDetection._vs){ try{ startDetection._vs.remove(); }catch(e){} startDetection._vs=null; }
     closeProfile(); id('camhost').innerHTML='';
     emailI.value=''; passI.value=''; emailI.classList.remove('filled'); passI.classList.remove('filled');
     id('pf-pass1').value=''; id('pf-pass2').value=''; id('pf-name-msg').textContent=''; id('pf-pass-msg').textContent='';
@@ -527,7 +543,24 @@
       im.onerror=function(){ host.innerHTML='<div class="nosignal">No llega la imagen.<br>Revisa la URL en config.js.</div>'; };
       host.appendChild(im);
     } else if(cfg.type==='iframe'){
-      var f=document.createElement('iframe'); f.src=cfg.url; f.allow='autoplay; fullscreen'; host.appendChild(f);
+      var u2=null; try{ u2=new URL(cfg.url); }catch(e){}
+      if(u2 && /(webrtc)\.html$/.test(u2.pathname)){
+        // go2rtc webrtc.html: montar componente video-stream (WebRTC, solo vídeo)
+        var b2=u2.origin, s2=u2.searchParams.get('src')||'camara';
+        ensureScript(b2+'/video-rtc.js', function(){
+          var vs=document.createElement('video-stream');
+          try{ vs.mode='webrtc'; vs.media='video'; }catch(e){}
+          vs.setAttribute('mode','webrtc');
+          vs.setAttribute('media','video');
+          vs.setAttribute('style','width:100%;height:100%;');
+          host.appendChild(vs);
+          try{ vs.src=b2+'/api/ws?src='+s2; }catch(e){}
+          mountCamera._video=vs;
+        }, function(){ host.innerHTML='<div class="nosignal">No se pudo cargar el reproductor de go2rtc.<br>¿Está abierto?</div>'; });
+      } else {
+        // cualquier otra URL (stream.html u otra página): meterla tal cual en un marco
+        var f=document.createElement('iframe'); f.src=cfg.url; f.allow='autoplay; fullscreen'; host.appendChild(f);
+      }
     } else { // hls
       var v=document.createElement('video'); v.autoplay=true; v.muted=true; v.playsInline=true; v.controls=true;
       host.appendChild(v);
@@ -550,6 +583,84 @@
         setTxt('sb-uptime',pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60)); }
     }
     t(); if(!startClock._i){ startClock._i=setInterval(t,1000); }
+  }
+
+  // cargar un script una sola vez
+  function ensureScript(src,ok,fail){
+    if(ensureScript._l[src]){ ok(); return; }
+    var s=document.createElement('script'); s.src=src;
+    s.onload=function(){ ensureScript._l[src]=true; ok(); };
+    s.onerror=function(){ if(fail)fail(); };
+    document.head.appendChild(s);
+  }
+  ensureScript._l={};
+
+  // ---- DETECCIÓN DE MOVIMIENTO (analiza el vídeo WebRTC de go2rtc; sin ffmpeg) ----
+  function startDetection(){
+    if(startDetection._i){ clearInterval(startDetection._i); startDetection._i=null; }
+    if(startDetection._vs){ try{ startDetection._vs.remove(); }catch(e){} startDetection._vs=null; }
+    var cfg=window.CAMERA_STREAM||{}, dcfg=window.DETECT||{};
+    if(dcfg.enabled===false) return;
+    var base='http://localhost:1984', src='camara';
+    try{ var u=new URL(cfg.url); base=u.origin; src=u.searchParams.get('src')||src; }catch(e){}
+
+    var pad2=function(x){return String(x).padStart(2,'0');};
+    var feed=document.getElementById('camfeed'), pill=document.getElementById('motion');
+    var W=128,H=72,n=W*H, prev=new Uint8Array(n), hasPrev=false, warned=false;
+    var inMotion=false, lastEvent=0, clearAt=0, detVideo=null;
+    var pixTh=dcfg.pixel||24, motionTh=dcfg.sensitivity||0.02;
+    var cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+    var ctx=cv.getContext('2d',{willReadFrequently:true});
+
+    // la detección reutiliza el mismo vídeo del display (video-stream de go2rtc)
+    var tries=0;
+    (function find(){
+      var vs=mountCamera._video;
+      detVideo = vs ? (vs.video || vs.querySelector('video') || (vs.shadowRoot && vs.shadowRoot.querySelector('video'))) : document.querySelector('#camhost video');
+      if(detVideo && detVideo.videoWidth>0){ if(!startDetection._i) startDetection._i=setInterval(tick,350); }
+      else if(tries++<80){ setTimeout(find,200); }
+      else { detFail(); }
+    })();
+
+    function detFail(){ if(warned)return; warned=true;
+      var e=document.getElementById('evempty');
+      if(e){ e.innerHTML='No se pudo activar la detección.<br>Comprueba que go2rtc esté abierto y que la cámara se ve.'; }
+      if(pill) pill.textContent='● DETECCIÓN OFF';
+    }
+    function addEvent(){
+      var list=document.getElementById('evlist'), empty=document.getElementById('evempty');
+      if(empty) empty.style.display='none';
+      var d=new Date(), t=pad2(d.getHours())+':'+pad2(d.getMinutes())+':'+pad2(d.getSeconds());
+      var el=document.createElement('div'); el.className='ev';
+      el.innerHTML='<span class="edot"></span><div class="etx"><b>Movimiento detectado</b><small>CAM-01 · SECTOR A — '+t+'</small></div>';
+      list.insertBefore(el, list.firstChild);
+      while(list.querySelectorAll('.ev').length>40){ list.removeChild(list.lastElementChild); }
+    }
+    function setMotion(on){
+      if(on){
+        if(pill) pill.textContent='● MOVIMIENTO';
+        feed.classList.add('alert'); clearAt=Date.now()+1200;
+        if(!inMotion){ inMotion=true; var now=Date.now();
+          if(now-lastEvent>4000){ lastEvent=now; addEvent(); } }
+      } else {
+        inMotion=false;
+        if(Date.now()>clearAt){ if(pill) pill.textContent='● SIN MOVIMIENTO'; feed.classList.remove('alert'); }
+      }
+    }
+    function tick(){
+      if(!detVideo || detVideo.readyState<2 || !detVideo.videoWidth) return;
+      try{
+        ctx.drawImage(detVideo,0,0,W,H);
+        var d=ctx.getImageData(0,0,W,H).data, changed=0;
+        for(var p=0;p<n;p++){
+          var g=(d[p*4]+d[p*4+1]+d[p*4+2])/3|0;
+          if(hasPrev && Math.abs(g-prev[p])>pixTh) changed++;
+          prev[p]=g;
+        }
+        if(hasPrev) setMotion(changed/n>motionTh);
+        hasPrev=true;
+      }catch(err){}
+    }
   }
 
   // ---- ojo que sigue al cursor (login) ----
